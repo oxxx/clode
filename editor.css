@@ -1,0 +1,14 @@
+pre {
+    width: 100%;
+    min-height: 500px;
+    background-color: #000;
+    color: #fff;
+}
+
+code#code {
+    outline: 0;
+}
+
+pre.prettyprint {
+    display: none;
+}
