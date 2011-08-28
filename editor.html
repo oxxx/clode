@@ -29,6 +29,9 @@
     <script type="text/javascript">
         var timer = null;
 
+        var shiftMode = false;
+        var selectingBackwards = false;
+
         var code = document.getElementById('code');
         var buffer = document.getElementById('buffer');
 
@@ -82,14 +85,14 @@
                     }
                 }
             }
-            console.log('Extracted position: ' + pos.line + ':' + pos.column);
+            //console.log('Extracted position: ' + pos.line + ':' + pos.column);
             return pos;
         }
 
         var extractTextAndCursorPosition = function () {
             var sel = rangy.getSelection();
             var range = sel.getRangeAt(0);
-            console.log('Range: ' + range.startContainer.nodeName + ':' + range.startContainer.data + ':' + range.startOffset + ', ' + range.endContainer.nodeName + ':' + range.endContainer.data + ':' + range.endOffset);
+            //console.log('Range: ' + range.startContainer.nodeName + ':' + range.startContainer.data + ':' + range.startOffset + ', ' + range.endContainer.nodeName + ':' + range.endContainer.data + ':' + range.endOffset);
 
             var rangeStartNode = range.startContainer;
             var rangeStartOffset = range.startOffset;
@@ -134,7 +137,7 @@
             if(!indent) {
                 indent = '';
             }
-            console.log(indent + node.nodeName + '@' + line + ':' + column + (node.nodeName == '#text' ? ':"' + node.data + '"': ''));
+            //console.log(indent + node.nodeName + '@' + line + ':' + column + (node.nodeName == '#text' ? ':"' + node.data + '"': ''));
             if (node.nodeName == 'BR') {
                 line++;
                 column = 0;
@@ -178,8 +181,8 @@
         }
 
         var placeCursorInDom = function (node, startCursorPosition, endCursorPosition) {
-            console.log('Placing cursor on ' + startCursorPosition.line + ':' + startCursorPosition.column 
-                    + ',' + endCursorPosition.line + ':' + endCursorPosition.column);
+            //console.log('Placing cursor on ' + startCursorPosition.line + ':' + startCursorPosition.column 
+            //        + ',' + endCursorPosition.line + ':' + endCursorPosition.column);
 
             var startResult = findNodeAndOffsetForCursor(node, 0, 0, startCursorPosition.line, startCursorPosition.column);
             var endResult = findNodeAndOffsetForCursor(node, 0, 0, endCursorPosition.line, endCursorPosition.column);
@@ -193,21 +196,21 @@
 
             }
             else {
-                console.log('Did not find nodes, putting cursor at last element');
+                //console.log('Did not find nodes, putting cursor at last element');
                 range.selectNode(code.lastChild);
                 range.collapse(false);
             }
 
             var sel = rangy.getSelection();
             sel.removeAllRanges();
-            sel.addRange(range);
+            sel.addRange(range, selectingBackwards);
         };
 
         var highlight = function () {
             var textAndOffset = extractTextAndCursorPosition();
             //code.innerText = textAndOffset.text + '\n';
             buffer.innerText = textAndOffset.text;
-            console.log('Extracted text: "' + textAndOffset.text + '"');
+            //console.log('Extracted text: "' + textAndOffset.text + '"');
             prettyPrint();
             var insertPoint = textAndOffset.node.parentNode;
             var block = document.createElement('span');
@@ -231,9 +234,21 @@
 
             }, 1000);
         }
+        
+        document.onkeydown = function(e) {
+            if (e.keyCode == 16) {
+                shiftMode = true;
+            }
+        }
         document.onkeyup = function (e) {
+            if (e.keyCode == 16) {
+                shiftMode = false;
+                selectingBackwards = false;
+            }
+            else if (shiftMode && (e.keyCode == 37 || e.keyCode == 38)) {
+                selectingBackwards = true;
+            }
             highlight();
-            //resetTimer();
         };
 
         code.focus();
