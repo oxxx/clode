@@ -1,25 +1,30 @@
 <!DOCTYPE html>
 <html>
     <head>
-        <script type="text/javascript" src="http://yandex.st/jquery/1.6.2/jquery.min.js"></script>
         <script type="text/javascript" src="rangy-core.js"></script>
-        <script type="text/javascript" src="http://google-code-prettify.googlecode.com/svn/trunk/src/prettify.js"></script>
+
+        <script type="text/javascript" src="prettify.js"></script>
         <link rel="stylesheet" type="text/css" href="sons-of-obsidian.css" />
+
         <style type="text/css">
             pre {
                 width: 100%;
-                min-height: 600px;
+                min-height: 500px;
                 background-color: #000;
                 color: #fff;
             }
             code#code {
                 outline: 0;
             }
+            pre.prettyprint {
+                display: none;
+            }
         </style>
+
     </head>
-    <body style="color: #fff">
+    <body>
         <pre><code id="code" contenteditable="true"></code></pre>
-        <pre style="display: none" class="prettyprint"><code id="buffer"></code></pre>
+        <pre class="prettyprint"><code id="buffer"></code></pre>
     </body>
     <script type="text/javascript">
         var timer = null;
