@@ -3,13 +3,15 @@
     <head>
         <script type="text/javascript" src="http://yandex.st/jquery/1.6.2/jquery.min.js"></script>
         <script type="text/javascript" src="rangy-core.js"></script>
+        <script type="text/javascript" src="rangy-selectionsaverestore.js"></script>
         <script type="text/javascript" src="http://google-code-prettify.googlecode.com/svn/trunk/src/prettify.js"></script>
-        <!--link rel="stylesheet" type="text/css" href="http://google-code-prettify.googlecode.com/svn/trunk/src/prettify.css" /-->
         <link rel="stylesheet" type="text/css" href="sons-of-obsidian.css" />
         <style type="text/css">
             pre {
-                width: 800px;
+                width: 100%;
                 min-height: 600px;
+                background-color: #000;
+                color: #fff;
             }
             code#code {
                 outline: 0;
@@ -17,12 +19,14 @@
         </style>
     </head>
     <body style="color: #fff">
-        <pre class="prettyprint"><code id="code" contenteditable="true"></code></pre>
+        <pre><code id="code" contenteditable="true"></code></pre>
+        <pre style="display: none" class="prettyprint"><code id="buffer"></code></pre>
     </body>
     <script type="text/javascript">
         var timer = null;
 
         var code = document.getElementById('code');
+        var buffer = document.getElementById('buffer');
 
         var extractText = function(node, line, column, infos) {
             var text = '';
@@ -83,15 +87,12 @@
             var range = sel.getRangeAt(0);
             console.log('Range: ' + range.startContainer.nodeName + ':' + range.startContainer.data + ':' + range.startOffset + ', ' + range.endContainer.nodeName + ':' + range.endContainer.data + ':' + range.endOffset);
 
-            var nodes = [code];
-            var nodeInfos = [];
-
-            var result = extractText(code, 0, 0, nodeInfos);
-
             var rangeStartNode = range.startContainer;
             var rangeStartOffset = range.startOffset;
             var rangeEndNode = range.endContainer;
             var rangeEndOffset = range.endOffset;
+
+
             if (range.startContainer.nodeName != '#text') {
                 rangeStartNode = rangeStartNode.childNodes[rangeStartOffset];
                 rangeStartOffset = 0;
@@ -100,6 +101,9 @@
                 rangeEndNode = rangeEndNode.childNodes[rangeEndOffset];
                 rangeEndOffset = 0;
             }
+
+            var nodeInfos = [];
+            var result = extractText(range.commonAncestorContainer, 0, 0, nodeInfos);
 
             var startPosition = null;
             var endPosition = null;
@@ -119,14 +123,14 @@
                 }
             }
 
-            return { text: result.text, startPosition: startPosition, endPosition: endPosition };
+            return { node: range.commonAncestorContainer, text: result.text, startPosition: startPosition, endPosition: endPosition };
         };
 
         var findNodeAndOffsetForCursor = function (node, line, column, targetLine, targetColumn, indent) {
             if(!indent) {
                 indent = '';
             }
-            //console.log(indent + node.nodeName + '@' + line + ':' + column + (node.nodeName == '#text' ? ':"' + node.data + '"': ''));*/
+            console.log(indent + node.nodeName + '@' + line + ':' + column + (node.nodeName == '#text' ? ':"' + node.data + '"': ''));
             if (node.nodeName == 'BR') {
                 line++;
                 column = 0;
@@ -169,12 +173,12 @@
             return { node: null, offset: -1, line: line, column: column };
         }
 
-        var placeCursorInDom = function (startCursorPosition, endCursorPosition) {
+        var placeCursorInDom = function (node, startCursorPosition, endCursorPosition) {
             console.log('Placing cursor on ' + startCursorPosition.line + ':' + startCursorPosition.column 
                     + ',' + endCursorPosition.line + ':' + endCursorPosition.column);
 
-            var startResult = findNodeAndOffsetForCursor(code, 0, 0, startCursorPosition.line, startCursorPosition.column);
-            var endResult = findNodeAndOffsetForCursor(code, 0, 0, endCursorPosition.line, endCursorPosition.column);
+            var startResult = findNodeAndOffsetForCursor(node, 0, 0, startCursorPosition.line, startCursorPosition.column);
+            var endResult = findNodeAndOffsetForCursor(node, 0, 0, endCursorPosition.line, endCursorPosition.column);
 
             code.focus();
             var range = document.createRange();
@@ -189,6 +193,7 @@
                 range.selectNode(code.lastChild);
                 range.collapse(false);
             }
+
             var sel = rangy.getSelection();
             sel.removeAllRanges();
             sel.addRange(range);
@@ -196,9 +201,20 @@
 
         var highlight = function () {
             var textAndOffset = extractTextAndCursorPosition();
-            code.innerText = textAndOffset.text + '\n';
+            //code.innerText = textAndOffset.text + '\n';
+            buffer.innerText = textAndOffset.text;
+            console.log('Extracted text: "' + textAndOffset.text + '"');
             prettyPrint();
-            placeCursorInDom(textAndOffset.startPosition, textAndOffset.endPosition);
+            var insertPoint = textAndOffset.node.parentNode;
+            var block = document.createElement('span');
+            while (buffer.childNodes.length) {
+                var child = buffer.childNodes[0];
+                buffer.removeChild(child);
+                block.appendChild(child);
+            }
+            insertPoint.insertBefore(block, textAndOffset.node);
+            insertPoint.removeChild(textAndOffset.node);
+            placeCursorInDom(block, textAndOffset.startPosition, textAndOffset.endPosition);
         };
         
         var resetTimer = function () {
@@ -212,8 +228,8 @@
             }, 1000);
         }
         document.onkeyup = function (e) {
-            //highlight();
-            resetTimer();
+            highlight();
+            //resetTimer();
         };
 
         code.focus();
