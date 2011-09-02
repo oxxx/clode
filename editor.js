@@ -209,13 +209,45 @@ var buffer = null;
 window.onload = function() {
     code = document.getElementById('code');
     buffer = document.getElementById('buffer');
-    document.onkeydown = function(e) {
+    code.onkeydown = function(e) {
         if (e.keyCode == 16) {
             shiftMode = true;
         }
+        if (e.keyCode == 13) {
+            var sel = rangy.getSelection();
+            var range = sel.getRangeAt(0);
+            var newSelectedNode = null;
+            if (range.endContainer.nodeName == '#text' ) {
+              // TODO: Handle case where cursor is not at end - see what Chrome
+              // does
+              var insertPoint = range.endContainer.parentNode;
+              if (range.endContainer.nextSibling) {
+                insertPoint.insertBefore(document.createTextNode('\n'), range.endContainer.nextSibling);
+                newSelectedNode = document.createTextNode('\n');
+                insertPoint.insertBefore(newSelectedNode, range.endContainer.nextSibling);
+                
+              }
+              else {
+                insertPoint.appendChild(document.createTextNode('\n'));
+                newSelectedNode = document.createTextNode('\n');
+                insertPoint.appendChild(newSelectedNode);
+              }
+              var newRange = rangy.createRange();
+              newRange.setStart(newSelectedNode, 0);
+              newRange.setEnd(newSelectedNode, 0);
+              sel.removeAllRanges();
+              sel.addRange(newRange);
+            }
+            else {
+              var node = range.endContainer.childNodes[range.endOffset];
+              var insertPoint = node.parentNode;
+              insertPoint.insertBefore(document.createTextNode('\n'), node);
+            }
+            e.preventDefault();
+        }
     };
 
-    document.onkeyup = function (e) {
+    code.onkeyup = function (e) {
         if (e.keyCode == 16) {
             shiftMode = false;
             selectingBackwards = false;
@@ -228,3 +260,4 @@ window.onload = function() {
 
     code.focus();
 }
+
