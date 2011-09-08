@@ -172,7 +172,7 @@ var placeCursorInDom = function (node, startCursorPosition, endCursorPosition) {
 var highlight = function () {
     var textAndOffset = extractTextAndCursorPosition();
     //code.innerText = textAndOffset.text + '\n';
-    buffer.innerText = textAndOffset.text;
+    buffer.innerHTML = textAndOffset.text;
     //console.log('Extracted text: "' + textAndOffset.text + '"');
     prettyPrint();
     var insertPoint = textAndOffset.node.parentNode;
@@ -260,4 +260,5 @@ window.onload = function() {
 
     code.focus();
 }
+
 
